@@ -9,6 +9,8 @@ A Flask-based web application for detecting and generating fake news using machi
 - ✏️ Real news modification simulation
 - 📊 Batch processing for multiple articles
 - 🎯 Confidence scores for predictions
+- [Templtes Link]([https://example.com](https://chaudharykhushi975-source.github.io/Fake_News_Generation_and_Detection/templates/))
+ 
 
 ## Installation
 
@@ -16,5 +18,3 @@ A Flask-based web application for detecting and generating fake news using machi
 ```bash
 git clone [https://github.com/chaudharykhushi975-source/Fake_News_Generation_and_Detection/tree/main] 
 cd fake-news-detection
-[Templtes Link]([https://example.com](https://chaudharykhushi975-source.github.io/Fake_News_Generation_and_Detection/templates/))
- 
