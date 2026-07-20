@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake News Detection & Generation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .tab-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px 20px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            min-width: 100px;
+        }
+        
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            margin-top: 15px;
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .result.show {
+            display: block;
+        }
+        
+        .result.fake {
+            background: #fee;
+            border: 2px solid #ff6b6b;
+        }
+        
+        .result.real {
+            background: #efe;
+            border: 2px solid #51cf66;
+        }
+        
+        .result h3 {
+            margin-bottom: 10px;
+        }
+        
+        .confidence-bar {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.5s;
+            border-radius: 10px;
+        }
+        
+        .generated-text {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        
+        .input-group {
+            margin: 15px 0;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .tab-container {
+                flex-direction: column;
+            }
+            
+            .tab {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📰 Fake News Detection & Generation</h1>
+        
+        <div class="tab-container">
+            <button class="tab active" data-tab="detect">Detect</button>
+            <button class="tab" data-tab="generate">Generate</button>
+            <button class="tab" data-tab="modify">Modify</button>
+            <button class="tab" data-tab="batch">Batch</button>
+        </div>
+        
+        <!-- Detection Tab -->
+        <div id="detect" class="tab-content active">
+            <h2>Detect Fake News</h2>
+            <p>Paste a news article to check if it's fake or real.</p>
+            <div class="input-group">
+                <textarea id="detect-text" placeholder="Enter news text here..."></textarea>
+            </div>
+            <button onclick="detectNews()">🔍 Detect</button>
+            
+            <div id="detect-loading" class="loading">
+                <div class="spinner"></div>
+                <p>Analyzing news...</p>
+            </div>
+            
+            <div id="detect-result" class="result">
+                <h3 id="result-title"></h3>
+                <p id="result-text"></p>
+                <div class="confidence-bar">
+                    <div class="confidence-fill" id="confidence-fill" style="width: 0%"></div>
+                </div>
+                <p id="confidence-text"></p>
+            </div>
+        </div>
+        
+        <!-- Generation Tab -->
+        <div id="generate" class="tab-content">
+            <h2>Generate Fake News</h2>
+            <p>Generate a sample fake news article for educational purposes.</p>
+            <div class="input-group">
+                <label for="topic-input">Topic (optional):</label>
+                <input type="text" id="topic-input" placeholder="e.g., Government, Science, Health">
+            </div>
+            <button onclick="generateNews()">🔄 Generate</button>
+            
+            <div id="generate-loading" class="loading">
+                <div class="spinner"></div>
+                <p>Generating news...</p>
+            </div>
+            
+            <div id="generate-result" class="result">
+                <h3>Generated Fake News</h3>
+                <div id="generated-content" class="generated-text"></div>
+                <p style="color: #666; font-size: 14px; margin-top: 10px;">
+                    ⚠️ This is AI-generated content for educational purposes only.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Modify Tab -->
+        <div id="modify" class="tab-content">
+            <h2>Modify Real News</h2>
+            <p>Take a real news article and see how it could be modified to become fake news.</p>
+            <div class="input-group">
+                <textarea id="modify-text" placeholder="Enter real news text here..."></textarea>
+            </div>
+            <button onclick="modifyNews()">✏️ Modify</button>
+            
+            <div id="modify-loading" class="loading">
+                <div class="spinner"></div>
+                <p>Modifying text...</p>
+            </div>
+            
+            <div id="modify-result" class="result">
+                <h3>Modified Text</h3>
+                <div id="modified-content" class="generated-text"></div>
+            </div>
+        </div>
+        
+        <!-- Batch Detection Tab -->
+        <div id="batch" class="tab-content">
+            <h2>Batch Detection</h2>
+            <p>Upload multiple news articles for detection.</p>
+            <div class="input-group">
+                <textarea id="batch-text" placeholder="Enter multiple news articles (separate with newlines)..."></textarea>
+            </div>
+            <button onclick="batchDetect()">📊 Batch Detect</button>
+            
+            <div id="batch-loading" class="loading">
+                <div class="spinner"></div>
+                <p>Processing articles...</p>
+            </div>
+            
+            <div id="batch-result" class="result">
+                <h3>Batch Results</h3>
+                <div id="batch-content"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+        
+        async function detectNews() {
+            const text = document.getElementById('detect-text').value;
+            if (!text) {
+                alert('Please enter some text to analyze.');
+                return;
+            }
+            
+            showLoading('detect-loading');
+            hideResult('detect-result');
+            
+            try {
+                const formData = new FormData();
+                formData.append('news_text', text);
+                
+                const response = await fetch('/detect', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                hideLoading('detect-loading');
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                showResult('detect-result', data);
+                
+            } catch (error) {
+                hideLoading('detect-loading');
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        async function generateNews() {
+            const topic = document.getElementById('topic-input').value;
+            
+            showLoading('generate-loading');
+            hideResult('generate-result');
+            
+            try {
+                const formData = new FormData();
+                if (topic) formData.append('topic', topic);
+                
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                hideLoading('generate-loading');
+                
+                const resultDiv = document.getElementById('generate-result');
+                const contentDiv = document.getElementById('generated-content');
+                contentDiv.textContent = data.full_text;
+                resultDiv.classList.add('show');
+                resultDiv.className = 'result show fake';
+                
+            } catch (error) {
+                hideLoading('generate-loading');
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        async function modifyNews() {
+            const text = document.getElementById('modify-text').value;
+            if (!text) {
+                alert('Please enter some text to modify.');
+                return;
+            }
+            
+            showLoading('modify-loading');
+            hideResult('modify-result');
+            
+            try {
+                const formData = new FormData();
+                formData.append('real_text', text);
+                
+                const response = await fetch('/modify', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                hideLoading('modify-loading');
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                const resultDiv = document.getElementById('modify-result');
+                const contentDiv = document.getElementById('modified-content');
+                contentDiv.textContent = data.modified_text;
+                resultDiv.classList.add('show');
+                resultDiv.className = 'result show fake';
+                
+            } catch (error) {
+                hideLoading('modify-loading');
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        async function batchDetect() {
+            const text = document.getElementById('batch-text').value;
+            if (!text) {
+                alert('Please enter some texts to analyze.');
+                return;
+            }
+            
+            const texts = text.split('\n').filter(t => t.trim());
+            
+            showLoading('batch-loading');
+            hideResult('batch-result');
+            
+            try {
+                const response = await fetch('/batch_detect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ texts: texts })
+                });
+                
+                const data = await response.json();
+                hideLoading('batch-loading');
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                const resultDiv = document.getElementById('batch-result');
+                const contentDiv = document.getElementById('batch-content');
+                
+                let html = '<table style="width:100%; border-collapse: collapse;">';
+                html += '<tr style="background:#f0f0f0;"><th style="padding:10px; border:1px solid #ddd;">Article</th><th style="padding:10px; border:1px solid #ddd;">Prediction</th><th style="padding:10px; border:1px solid #ddd;">Confidence</th></tr>';
+                
+                data.results.forEach(item => {
+                    const color = item.prediction === 'Fake News' ? '#ff6b6b' : '#51cf66';
+                    html += `<tr>
+                        <td style="padding:10px; border:1px solid #ddd;">${item.text}</td>
+                        <td style="padding:10px; border:1px solid #ddd; color:${color}; font-weight:600;">${item.prediction}</td>
+                        <td style="padding:10px; border:1px solid #ddd;">${item.confidence}%</td>
+                    </tr>`;
+                });
+                
+                html += '</table>';
+                contentDiv.innerHTML = html;
+                resultDiv.classList.add('show');
+                resultDiv.className = 'result show';
+                
+            } catch (error) {
+                hideLoading('batch-loading');
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        function showLoading(id) {
+            document.getElementById(id).classList.add('show');
+        }
+        
+        function hideLoading(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+        
+        function hideResult(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+        
+        function showResult(id, data) {
+            const resultDiv = document.getElementById(id);
+            const title = document.getElementById('result-title');
+            const text = document.getElementById('result-text');
+            const fill = document.getElementById('confidence-fill');
+            const confidenceText = document.getElementById('confidence-text');
+            
+            const isFake = data.prediction === 'Fake News';
+            title.textContent = data.prediction;
+            text.textContent = `The model is ${data.confidence}% confident that this is ${data.prediction.toLowerCase()}.`;
+            fill.style.width = data.confidence + '%';
+            confidenceText.textContent = `Confidence: ${data.confidence}%`;
+            
+            resultDiv.className = `result show ${isFake ? 'fake' : 'real'}`;
+        }
+    </script>
+</body>
+</html>
