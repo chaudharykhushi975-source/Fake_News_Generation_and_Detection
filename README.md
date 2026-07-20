@@ -14,5 +14,5 @@ A Flask-based web application for detecting and generating fake news using machi
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/fake-news-detection.git
+git clone https://github.com/yourusername/fake-news-detection.git]
 cd fake-news-detection
